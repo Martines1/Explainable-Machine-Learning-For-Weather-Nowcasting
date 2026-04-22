@@ -1,0 +1,8 @@
+*.png
+*.gif
+.idea
+__pycache__/
+*.pyc
+rainnet/model/
+*.pt
+*.svg

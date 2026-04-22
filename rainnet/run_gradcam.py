@@ -1,0 +1,112 @@
+from pathlib import Path
+import numpy as np
+import torch
+from pytorch_grad_cam import LayerCAM
+
+import utils
+from gradcam.gradcam import GradCam
+from gradcam.regression_target import RegressionTarget
+from utils import data_preprocessing
+from rainnet_arch import RainNet
+import torch.nn as nn
+from convert_from_h5 import load_keras_h5_into_torch
+
+current_file = Path(__file__).resolve()
+current_dir = current_file.parent
+
+data_number = "2"
+
+FILES = utils.getData(data_number)
+DATA_DIR = current_dir / "data" / data_number
+
+PT_WEIGHTS = current_dir / "model" / "rainnet_torch_converted.pt"
+H5_WEIGHTS = current_dir / "model" / "rainnet.h5"
+
+
+def _load_torch_model():
+    if PT_WEIGHTS.exists():
+        m = RainNet(in_channels=4)
+        sd = torch.load(PT_WEIGHTS, map_location="cpu")
+        m.load_state_dict(sd, strict=True)
+        m.eval()
+        return m
+    elif H5_WEIGHTS.exists():
+        m = load_keras_h5_into_torch(str(H5_WEIGHTS), in_channels=4)
+        m.eval()
+        return m
+    return None
+
+
+def _to_torch_input(X: np.ndarray) -> torch.Tensor:
+    """
+    Input:
+      - (4, H, W)
+      - (H, W, 4)
+      - (N, 4, H, W)
+      - (N, H, W, 4)
+    Returns (N, 4, H, W) float32.
+    """
+    if X.ndim == 3:
+        if X.shape[0] == 4:
+            x = X[None, ...]
+        elif X.shape[-1] == 4:
+            x = np.transpose(X, (2, 0, 1))[None, ...]
+
+    elif X.ndim == 4:
+        if X.shape[1] == 4:
+            x = X
+        elif X.shape[-1] == 4:
+            x = np.transpose(X, (0, 3, 1, 2))
+
+    if x.dtype != np.float32:
+        x = x.astype(np.float32, copy=False)
+    return torch.from_numpy(x).contiguous()
+
+
+def main():
+    file_paths = [DATA_DIR / f for f in FILES]
+    file_paths = sorted(file_paths, key=lambda f: utils.parse_ts(f.name))
+
+    print("Used files as input (ordered by time):")
+    for p in file_paths:
+        print("  ", p.name)
+
+    scans = [utils.read_ry_radolan(p) for p in file_paths]
+    X_raw = np.stack(scans[:4], axis=0).astype("float32")
+    print("X_raw min/max:", np.min(X_raw), np.max(X_raw))
+    print("Count of NaN in X_raw: ", np.isnan(X_raw).sum())
+
+    for count, image in enumerate(X_raw):
+        utils.show_and_save(image, f'input_{count}', False)
+
+    X = data_preprocessing(X_raw)
+    assert X.dtype == np.float32
+    model = _load_torch_model()
+    x_t = _to_torch_input(X)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f'Using device {device}')
+
+    model.to(device)
+    x_t = x_t.to(device)
+    target = RegressionTarget("mean")
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Conv2d):
+            print("Available module: ", name)
+    #         print("Running Grad-CAM for module:", name)
+    #         gradcam = GradCam(model, x_t, module=name)
+    #         gradcam.run_per_channel(target)
+    gradcam = GradCam(model, x_t, module="conv8f")
+    # gradcam.run_isolated_channels(target)
+    # gradcam.run_all_channels(target)
+
+    targets = [
+        RegressionTarget("mean"),
+        RegressionTarget("topk", 0.05),
+        RegressionTarget("sum"),
+        RegressionTarget("topk", 0.7)
+    ]
+    gradcam.test_target_functions(c=3, targets=targets)
+
+
+main()
