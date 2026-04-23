@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import meteors as mt
 from .scalar_wrapper import ScalarWrapper
@@ -249,9 +251,12 @@ class IntegratedGradient:
 
             fig.suptitle(kind, fontsize=11)
             plt.tight_layout(rect=[0, 0, 1, 1])
+
+            Path(f"output/").mkdir(parents=True, exist_ok=True)
+            Path(f"output/IG/").mkdir(parents=True, exist_ok=True)
             fig.savefig(out_name, dpi=200, bbox_inches="tight")
             plt.close(fig)
 
-        _plot_and_save("ALL", f"../IG/output/rainnet/ig_{mode}_all.png")
-        _plot_and_save("POSITIVE", f"../IG/output/rainnet/ig_{mode}_positive.png")
-        _plot_and_save("NEGATIVE", f"../IG/output/rainnet/ig_{mode}_negative.png")
+        _plot_and_save("ALL", f"output/IG/ig_{mode}_all.png")
+        _plot_and_save("POSITIVE", f"output/IG/ig_{mode}_positive.png")
+        _plot_and_save("NEGATIVE", f"output/IG/ig_{mode}_negative.png")
