@@ -41,7 +41,7 @@ class GradCam:
                 return module
         return None
 
-    def run(self, target: RegressionTarget):
+    def run(self, target):
         with self.cam_algo:
             grayscale_cam = self.cam_algo(input_tensor=self.input,
                                           targets=[target],
@@ -54,7 +54,7 @@ class GradCam:
             if isinstance(m, (nn.ReLU, nn.LeakyReLU)) and getattr(m, "inplace", False):
                 m.inplace = False
 
-    def _build_isolated_input(self, x_nchw: torch.Tensor, c) -> torch.Tensor:
+    def _build_isolated_input(self, x_nchw, c):
         device = x_nchw.device
         baseline = torch.log(torch.tensor(0.01, dtype=x_nchw.dtype, device=device))
         x_iso = torch.empty_like(x_nchw, device=device, dtype=x_nchw.dtype)
@@ -62,7 +62,7 @@ class GradCam:
         x_iso[:, c, :, :] = x_nchw[:, c, :, :]
         return x_iso
 
-    def _save_cam(self, cam, name: str, title: str):
+    def _save_cam(self, cam, name, title):
         cam = np.asarray(cam, dtype=np.float32)
         h, w = cam.shape
 
@@ -94,7 +94,7 @@ class GradCam:
         fig.savefig(f"output/gradcam/{self.module_name}/{name}.png", dpi=150)
         plt.close(fig)
 
-    def _save_cams_grid(self, cams: list):
+    def _save_cams_grid(self, cams):
         fig, axes = plt.subplots(2, 2, figsize=(13, 13))
         fig.suptitle(
             f'Isolated Channels Grad-CAM from {self.module_name} layer',
@@ -142,7 +142,7 @@ class GradCam:
         padding = int((from_shape - to_shape) / 2)
         return pred[padding:padding + to_shape, padding:padding + to_shape].copy()
 
-    def run_isolated_channels(self, target: RegressionTarget, aug_smooth: bool = False) -> list:
+    def run_isolated_channels(self, target, aug_smooth=False):
         self._disable_inplace_relu()
         cams = []
 
@@ -163,7 +163,7 @@ class GradCam:
         self._save_cams_grid(cams)
         return cams
 
-    def run_all_channels(self, target: RegressionTarget, aug_smooth=False):
+    def run_all_channels(self, target, aug_smooth=False):
         self._disable_inplace_relu()
         with self._get_method() as cam_algo:
             gray = cam_algo(
@@ -246,4 +246,3 @@ class GradCam:
         plt.close(fig)
 
         return [cam for _, cam in results]
-

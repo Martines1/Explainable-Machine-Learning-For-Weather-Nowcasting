@@ -37,7 +37,7 @@ def _load_torch_model():
     return None
 
 
-def _to_torch_input(X: np.ndarray) -> torch.Tensor:
+def _to_torch_input(X):
     """
     Input:
       - (4, H, W)

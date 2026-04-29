@@ -26,7 +26,7 @@ PT_WEIGHTS = current_dir / "model" / "rainnet_torch_converted.pt"
 H5_WEIGHTS = current_dir / "model" / "rainnet.h5"
 
 
-def logcosh_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+def logcosh_loss(pred, target):
     x = pred - target
     return (x + f.softplus(-2.0 * x) - math.log(2.0)).mean()
 
@@ -44,7 +44,7 @@ def _load_torch_model():
         return m
 
 
-def _to_torch_input(X: np.ndarray) -> torch.Tensor:
+def _to_torch_input(X):
     if X.ndim == 3:
         if X.shape[0] == 4:
             x = X[None, ...]

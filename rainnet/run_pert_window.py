@@ -37,7 +37,7 @@ def _load_torch_model():
         return m
 
 
-def _to_torch_input(X: np.ndarray) -> torch.Tensor:
+def _to_torch_input(X):
     if X.ndim == 3:
         if X.shape[0] == 4:
             x = X[None, ...]

@@ -41,7 +41,7 @@ importance_cmap = ListedColormap(importance_colors)
 importance_norm = BoundaryNorm(importance_boundaries, ncolors=importance_cmap.N, clip=True)
 
 
-def parse_ts(fname: str) -> str:
+def parse_ts(fname):
     _TIME_RE = re.compile(r".*-(\d{10})-dwd---bin(?:\.\w+)?$")
     m = _TIME_RE.match(fname)
     if not m:
@@ -208,7 +208,7 @@ def create_gif():
         )
 
 
-def read_ry_radolan(path: Path) -> np.ndarray:
+def read_ry_radolan(path):
     data, attrs = wio.read_radolan_composite(str(path), missing=None)
     nodata = attrs.get("nodataflag", -9999)
     sec_idx = attrs.get("secondary")

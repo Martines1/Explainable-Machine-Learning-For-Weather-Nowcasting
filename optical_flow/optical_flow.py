@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 from scipy.interpolate import RBFInterpolator
-
+from pathlib import Path
 
 class OpticalFlow:
     def __init__(self, frame1, frame2, window_size, cell):
@@ -171,7 +171,6 @@ class OpticalFlow:
 
         plt.tight_layout(rect=[0, 0.03, 1, 0.97])
 
-        from pathlib import Path
         Path("output").mkdir(parents=True, exist_ok=True)
         plt.savefig("flow.png", dpi=100, bbox_inches='tight')
         plt.close()
